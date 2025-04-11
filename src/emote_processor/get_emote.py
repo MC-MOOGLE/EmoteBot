@@ -1,6 +1,37 @@
 import cv2
 from deepface import DeepFace
 
+def resize_for_deepface(image, target_size=(152, 152), max_dimension=1024):
+    """
+    Resize an image while maintaining aspect ratio, optimized for DeepFace.
+    
+    Parameters:
+    - image: Input image (numpy array or file path)
+    - target_size: The desired face analysis size (default (152,152) for DeepFace)
+    - max_dimension: Maximum dimension to prevent over-processing large images
+    
+    Returns:
+    - Resized image as numpy array
+    """
+    
+    if isinstance(image, str):
+        image = cv2.imread(image)
+        if image is None:
+            raise ValueError(f"Could not read image from path: {image}")
+    
+    h, w = image.shape[:2]
+    scale = min(target_size[0]/h, target_size[1]/w)
+
+    if h > target_size[0] and w > target_size[1]:
+        scale = max(target_size[0]/h, target_size[1]/w)
+    
+    max_scale = min(max_dimension/h, max_dimension/w)
+    scale = min(scale, max_scale)
+    new_h, new_w = int(h * scale), int(w * scale)
+    
+    resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
+    return resized
+
 def get_emotions(image_path: str, backend: str = 'retinaface'):
     """Detect human emotion in an image.
     
@@ -16,9 +47,10 @@ def get_emotions(image_path: str, backend: str = 'retinaface'):
     """
     try:
         img = cv2.imread(image_path)
+        resized_image = resize_for_deepface(img)
 
         analysis = DeepFace.analyze(
-            img_path=img,
+            img_path=resized_image,
             actions=['emotion'],
             detector_backend=backend,
             enforce_detection=False,
@@ -43,8 +75,6 @@ def get_emotions(image_path: str, backend: str = 'retinaface'):
         
     except FileNotFoundError:
         raise FileNotFoundError
-    
-    return None
 
 if __name__ == "__main__":
     for image in ("angry_1", "angry_2", "happy_1", "happy_2", "sad_1", "sad_2"):
