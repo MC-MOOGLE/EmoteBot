@@ -1,7 +1,7 @@
 import cv2
 from deepface import DeepFace
 
-def get_emote(image_path: str):
+def get_emotions(image_path: str, backend: str = 'retinaface'):
     """Detect human emotion in an image.
     
     Args:
@@ -15,7 +15,15 @@ def get_emote(image_path: str):
         ValueError: If image is corrupted
     """
     try:
-        analysis = DeepFace.analyze(image_path, actions=['emotion'], silent=True)
+        img = cv2.imread(image_path)
+
+        analysis = DeepFace.analyze(
+            img_path=img,
+            actions=['emotion'],
+            detector_backend=backend,
+            enforce_detection=False,
+            silent=True
+        )
 
         print(type(analysis), analysis)
 
@@ -27,13 +35,22 @@ def get_emote(image_path: str):
 
         result = analysis[0]
         
-        dominant_emotion = result['dominant_emotion']
-        print(f"Dominant emotion: {dominant_emotion}")
-        return dominant_emotion
+        if result['face_confidence'] < 0.80:
+            return None
+        return result
+        
     except FileNotFoundError:
         raise FileNotFoundError
     
     return None
 
 if __name__ == "__main__":
-    get_emote("test_images/sad_1.jpg")
+    for backend in ('opencv', 'ssd', 'mtcnn', 'retinaface'):
+        result = get_emotions("test_images/sad_1.jpg", backend)
+
+        if not result:
+            print(f"{backend}: no emotion detected")
+            continue
+        
+        dominant_emotion = result['dominant_emotion']
+        print(f"{backend}: {dominant_emotion}")
