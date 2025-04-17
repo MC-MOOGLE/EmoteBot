@@ -32,7 +32,7 @@ def resize_for_deepface(image, target_size=(152, 152), max_dimension=1024):
     resized = cv2.resize(image, (new_w, new_h), interpolation=cv2.INTER_AREA)
     return resized
 
-def get_emotions(image_path: str, backend: str = 'retinaface'):
+def get_emotions(image_path: str, backend: str = 'opencv'):
     """Detect human emotion in an image.
     
     Args:
@@ -58,8 +58,8 @@ def get_emotions(image_path: str, backend: str = 'retinaface'):
         )
 
         emotes = analysis[0].get('emotion')
-        if emotes:
-            print(*(f"{key}: {int(value * 10) / 10}" for key, value in emotes.items()), sep=", ")
+        # if emotes:
+        #     print(*(f"{key}: {int(value * 10) / 10}" for key, value in emotes.items()), sep=", ")
 
         if not analysis or not isinstance(analysis, list):
             raise ValueError("No face detected or unable to recognize emotion in the image.")
@@ -77,14 +77,4 @@ def get_emotions(image_path: str, backend: str = 'retinaface'):
         raise FileNotFoundError
 
 if __name__ == "__main__":
-    for image in ("angry_1", "angry_2", "happy_1", "happy_2", "sad_1", "sad_2"):
-        print(f"======= {image} =========")
-        for backend in ('opencv', 'ssd', 'mtcnn', 'retinaface'):
-            result = get_emotions(f"test_images/{image}.jpg", backend)
-
-            if not result:
-                print(f"{backend}: no emotion detected\n")
-                continue
-
-            dominant_emotion = result['dominant_emotion']
-            print(f"{backend}: {dominant_emotion}\n")
+    pass

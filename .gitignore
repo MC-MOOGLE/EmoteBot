@@ -1,4 +1,6 @@
 test_images
+benchmark_results
+*.docx
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
