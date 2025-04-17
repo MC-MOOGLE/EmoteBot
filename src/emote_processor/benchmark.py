@@ -2,7 +2,6 @@ import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 
 from src.emote_processor.get_emote import get_emotions
 
