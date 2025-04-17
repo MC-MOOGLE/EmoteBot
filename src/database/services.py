@@ -45,7 +45,8 @@ def save_image(
 def find_similar_images(
     original_image_id: str,
     find_n: int,
-    same_emotion: bool = False
+    same_emotion: bool = False,
+    ignore_original_user: bool = True
 ) -> list:
     with SessionLocal() as session:
         # Получение исходного изображения
@@ -56,7 +57,7 @@ def find_similar_images(
         # Построение запроса
         query = session.query(Image).filter(
             and_(
-                Image.user_id != original.user_id,
+                Image.user_id != original.user_id if ignore_original_user else True,
                 Image.emotion == original.emotion if same_emotion else True
             )
         ).order_by(
