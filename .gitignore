@@ -3,6 +3,7 @@ images
 benchmark_results
 *.docx
 *~lock.*
+dataset
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
