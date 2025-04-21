@@ -4,8 +4,7 @@ import calendar
 from collections import defaultdict
 from src.database.services import get_user_data
 
-def create_calendar(entries, year: int | None = None, month: int | None = None, output_path="calendar.png"):
-    # Определяем текущий месяц и год
+def create_calendar(user_id, year: int | None = None, month: int | None = None, output_path="calendar.png"):
     now = datetime.datetime.now()
 
     if not year:
@@ -13,9 +12,10 @@ def create_calendar(entries, year: int | None = None, month: int | None = None, 
     if not month:
         month = now.month
     
-    # Получаем календарь и данные
     month_cal = calendar.monthcalendar(year, month)
     day_data = defaultdict(list)
+    
+    entries = get_user_data(user_id)
     for entry in entries:
         date = entry["created_at"]
         if date.year == year and date.month == month:
@@ -99,13 +99,8 @@ def create_calendar(entries, year: int | None = None, month: int | None = None, 
             # Текст с номером дня
             draw.text((x + 5, y + 5), str(day), font=font, fill="black")
 
-    img.save(output_path)
+    # img.save(output_path)
     return img
 
-def main():
-    data = get_user_data("a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
-
-    create_calendar(data, 2025, 1)
-
 if __name__ == "__main__":
-    main()
+    pass

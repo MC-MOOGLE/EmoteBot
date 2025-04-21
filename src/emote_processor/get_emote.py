@@ -71,7 +71,8 @@ def get_emotions(image_path: str, backend: str = 'opencv'):
         
         if result['face_confidence'] < 0.80:
             return None
-        return result
+        
+        return result['dominant_emotion']
         
     except FileNotFoundError:
         raise FileNotFoundError

@@ -5,46 +5,61 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 import random
 
-from src.database.database import init_db
-from src.database.services import save_image
-from src.database.services import find_similar_images
+from src.database.database import init_db, SessionLocal
+from src.database.services import save_image, find_similar_images
+from src.database.models import User, Settings
 init_db()
 
 folders = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 def main():
-    image_list = []
-    for folder in folders:
-        emotion_dir = os.path.join('test_images', folder)
-        if not os.path.exists(emotion_dir):
-            continue
-        for img_name in os.listdir(emotion_dir):
-            img_path = os.path.join(emotion_dir, img_name)
-            if os.path.isfile(img_path):
-                image_list.append((img_path, folder))
-
-    success = total = 0
-    start_time = time.time()
-
-    random.shuffle(image_list)
-    for file in image_list[:100]:
-        image, emotion = file
-
-        selected_date = datetime.now() - timedelta(days=success)
-
-        try:
-            image_id = save_image(
-                image,
-                emotion,
-                "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
-                selected_date
-            )
-
-            print(image_id)
-            success += 1
-        except ValueError:
-            print(f"No face for {image}")
+    for i in range(100):
+        current_user = f"test_user{i}"
+        with SessionLocal() as session:
+            user = session.query(User).filter(User.user_id == str(current_user)).first()
         
-        total += 1
+            if not user:
+                user = User(user_id=str(current_user))
+                session.add(user)
+                session.commit()
+                
+                # Создаем настройки по умолчанию
+                settings = Settings(user_id=user.user_id)
+                session.add(settings)
+                session.commit()
+
+        image_list = []
+        for folder in folders:
+            emotion_dir = os.path.join('test_images', folder)
+            if not os.path.exists(emotion_dir):
+                continue
+            for img_name in os.listdir(emotion_dir):
+                img_path = os.path.join(emotion_dir, img_name)
+                if os.path.isfile(img_path):
+                    image_list.append((img_path, folder))
+
+        success = total = 0
+        start_time = time.time()
+
+        random.shuffle(image_list)
+        for file in image_list[:25]:
+            image, emotion = file
+
+            selected_date = datetime.now() - timedelta(days=success)
+
+            try:
+                image_id = save_image(
+                    image,
+                    emotion,
+                    current_user,
+                    selected_date
+                )
+
+                print(image_id)
+                success += 1
+            except ValueError:
+                print(f"No face for {image}")
+            
+            total += 1
 
     # for image in os.listdir('images'):
     #     image_id = image.replace(".jpg", "")
@@ -63,4 +78,5 @@ def main():
     print(f"Total images: {total} / {success} succeed")
 
 if __name__ == "__main__":
+    pass
     main()
