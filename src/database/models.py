@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, text
+from sqlalchemy import Column, String, DateTime, text
 from sqlalchemy.dialects.postgresql import UUID
 from .database import Base
 from pgvector.sqlalchemy import Vector
@@ -15,3 +15,4 @@ class Image(Base):
     emotion = Column(String(50), nullable=False)
     file_path = Column(String(255), nullable=False)
     embedding = Column(Vector(128), nullable=False)  # 128-мерный вектор
+    created_date = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))

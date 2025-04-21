@@ -2,7 +2,7 @@ import uuid
 import shutil
 from pathlib import Path
 from sqlalchemy import and_, not_
-from sqlalchemy.orm import Session
+from datetime import datetime
 from .models import Image
 from ..emote_processor.face_embedding import get_face_embedding
 from .database import SessionLocal
@@ -10,7 +10,8 @@ from .database import SessionLocal
 def save_image(
     image_path: str,
     emotion: str,
-    user_id: str
+    user_id: str,
+    created_date: datetime | None = None,
 ) -> str:
     # Генерация UUID и путей
     image_uuid = uuid.uuid4()
@@ -30,17 +31,32 @@ def save_image(
     
     # Сохранение в БД
     with SessionLocal() as session:
+        if created_date is None:
+            created_date = datetime.now()
+
         image = Image(
             id=image_uuid,
             user_id=uuid.UUID(user_id),
             emotion=emotion,
             file_path=str(target_path),
-            embedding=embedding
+            embedding=embedding,
+            created_date = created_date
         )
+
         session.add(image)
         session.commit()
     
     return str(image_uuid)
+
+def get_user_data(user_id):
+    with SessionLocal() as session:        
+        query = session.query(Image).filter(Image.user_id == user_id)
+        
+        return [{
+            "image_path": img.file_path,
+            "emotion": img.emotion,
+            "created_at": img.created_date
+        } for img in query]
 
 def find_similar_images(
     original_image_id: str,
