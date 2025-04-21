@@ -70,7 +70,7 @@ def get_emotions(image_path: str, backend: str = 'opencv'):
         result = analysis[0]
         
         if result['face_confidence'] < 0.80:
-            return None
+            raise ValueError("No face detected or unable to recognize emotion in the image.")
         
         return result['dominant_emotion']
         

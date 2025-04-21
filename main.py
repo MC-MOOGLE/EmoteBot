@@ -10,7 +10,7 @@ from src.database.services import save_image, find_similar_images
 from src.database.models import User, Settings
 init_db()
 
-folders = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+folders = ['actors']
 def main():
     for i in range(100):
         current_user = f"test_user{i}"
@@ -40,8 +40,9 @@ def main():
         success = total = 0
         start_time = time.time()
 
-        random.shuffle(image_list)
-        for file in image_list[:25]:
+        # random.shuffle(image_list)
+        for file in image_list[:1]:
+            file = image_list[i]
             image, emotion = file
 
             selected_date = datetime.now() - timedelta(days=success)

@@ -7,6 +7,7 @@ from src.database.models import User, Settings
 from src.database.services import save_image, get_users, find_similar_images
 from src.emote_processor.get_emote import get_emotions
 from src.emote_processor.create_calendar import create_calendar
+from src.emote_processor.similar_people_plot import create_similar_image
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -37,6 +38,15 @@ def emotion_keyboard():
         keyboard.add(emotion)
     return keyboard
 
+# Другое
+def get_username_from_user_id(user_id):
+    try:
+        chat = bot.get_chat(user_id)
+        return chat.username
+    except Exception as e:
+        print(f"Error fecching {user_id}: {e}")
+        return user_id
+
 # Обработчики команд
 @bot.message_handler(commands=['start'])
 def handle_start(message):
@@ -53,7 +63,7 @@ def handle_start(message):
             session.add(settings)
             session.commit()
     
-    welcome_text = "Добро пожаловать! Выберите действие:"
+    welcome_text = "Добро пожаловать! Отправьте селфи, либо выберите действие:"
     bot.send_message(message.chat.id, welcome_text, reply_markup=main_keyboard())
 
 # Обработчик изображений
@@ -73,19 +83,23 @@ def handle_photo(message):
     
     # Определяем эмоцию
     if settings.ai_enabled:
-        emotion = get_emotions(temp_path)
-        msg = bot.send_message(message.chat.id, 
-                              f"Распознанная эмоция: {emotion}",
-                              reply_markup=types.ForceReply())
-        bot.register_next_step_handler(msg, confirm_emotion, temp_path, emotion)
+        try:
+            emotion = get_emotions(temp_path)
+
+            confirm_markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            confirm_markup.add('✅ Подтвердить')
+            confirm_markup.add('📋 Выбрать вручную')
+            msg = bot.send_message(message.chat.id, f"Распознанная эмоция: {emotion}", reply_markup=confirm_markup)
+            bot.register_next_step_handler(msg, confirm_emotion, temp_path, emotion)
+        except:        
+            msg = bot.send_message(message.chat.id, "Не удалось распознать эмоцию, выберите ее вручную.", reply_markup=emotion_keyboard())
+            bot.register_next_step_handler(msg, save_emotion, temp_path)
     else:
-        msg = bot.send_message(message.chat.id, 
-                              "Выберите эмоцию:",
-                              reply_markup=emotion_keyboard())
+        msg = bot.send_message(message.chat.id, "Выберите эмоцию:", reply_markup=emotion_keyboard())
         bot.register_next_step_handler(msg, save_emotion, temp_path)
 
 def confirm_emotion(message, temp_path, detected_emotion):
-    if message.text.lower() == 'подтвердить':
+    if message.text == '✅ Подтвердить':
         save_photo(message, temp_path, detected_emotion)
     else:
         msg = bot.send_message(message.chat.id, 
@@ -97,16 +111,22 @@ def save_emotion(message, temp_path):
     if message.text.lower() in ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']:
         save_photo(message, temp_path, message.text.lower())
     else:
-        bot.send_message(message.chat.id, "Неверная эмоция, попробуйте снова")
+        bot.send_message(message.chat.id, "Неверная эмоция", reply_markup=main_keyboard())
+        return
 
 def save_photo(message, image_path, emotion):
     with SessionLocal() as session:
         user = session.query(User).get(str(message.chat.id))
-    
-        # Сохраняем в БД
-        image_uuid = save_image(image_path, emotion, user.user_id)
+
+        try:
+            image_uuid = save_image(image_path, emotion, user.user_id)
+        except ValueError:
+            bot.send_message(message.chat.id, "Невозможно распознать лицо", reply_markup=main_keyboard())
+            return
+        except Exception as e:
+            bot.send_message(message.chat.id, "Не удалось сохранить картинку", reply_markup=main_keyboard())
+            return
         
-        # Статистика
         total_users = get_users()
         emotion_users = get_users(emotion)
         
@@ -140,11 +160,13 @@ def handle_similar(message):
             # Берем последнее изображение
             last_image = sorted(user.images, key=lambda x: x.created_date, reverse=True)[0]
             similar = find_similar_images(last_image)
+            image = create_similar_image((data["file_path"] for data in similar))
             
             if not similar:
                 bot.send_message(message.chat.id, "Похожих пользователей не найдено")
             else:
-                response = "Похожие пользователи:\n" + "\n".join([f"- {u['user_id']}" for u in similar])
+                bot.send_photo(message.chat.id, image)
+                response = "Похожие пользователи:\n" + "\n".join([f"- {get_username_from_user_id(u['user_id'])}" for u in similar])
                 bot.send_message(message.chat.id, response)
 
 
