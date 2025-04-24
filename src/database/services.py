@@ -1,9 +1,9 @@
 import uuid
 import shutil
 from pathlib import Path
-from sqlalchemy import and_
+from sqlalchemy import and_, true
 from datetime import datetime
-from .models import Image
+from .models import Image, User, Settings
 from ..emote_processor.face_embedding import get_face_embedding
 from .database import SessionLocal
 
@@ -18,8 +18,6 @@ def save_image(
     target_dir = Path("images")
     target_dir.mkdir(exist_ok=True)
     target_path = target_dir / f"{image_uuid}.jpg"
-    
-    # Копирование файла
     shutil.copy(image_path, target_path)
     
     # Получение эмбеддинга
@@ -73,31 +71,31 @@ def get_users(emotion = None):
         return unique_user_count
 
 def find_similar_images(
-    original_image: str,
+    image_id: str,
     find_n: int = 5,
     same_emotion: bool = False,
     ignore_original_user: bool = True,
     all_time = False
 ) -> list:
     with SessionLocal() as session:
-        # Получение исходного изображения
-        # original_image = session.query(Image).get(uuid.UUID(original_image_id))
-        # if not original_image:
-        #    return []
-        
-        # Построение запроса
+        original_image = session.query(Image).get(image_id)
+
         if not all_time:
             today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
-        query = session.query(Image).filter(
-            and_(
-                Image.user_id != original_image.user_id if ignore_original_user else True,
-                Image.emotion == original_image.emotion if same_emotion else True,
-                Image.created_date >= today_start if all_time else True
-            )
-        ).order_by(
-            Image.embedding.cosine_distance(original_image.embedding)
-        ).limit(find_n)
+        filters = [Settings.search_allowed == true()]
+
+        if ignore_original_user:
+            filters.append(Image.user_id != original_image.user_id)
+        if same_emotion:
+            filters.append(Image.emotion == original_image.emotion)
+        if all_time:
+            filters.append(Image.created_date >= today_start)
+
+        query = (session.query(Image).join(User).join(Settings)
+            .filter(and_(*filters))
+            .order_by(Image.embedding.cosine_distance(original_image.embedding)).limit(find_n)
+        ) # Join all tables and apply filters
         
         return [{
             "id": str(img.id),

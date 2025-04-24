@@ -103,4 +103,4 @@ def create_calendar(user_id, year: int | None = None, month: int | None = None, 
     return img
 
 if __name__ == "__main__":
-    pass
+    create_calendar("test_user100")
