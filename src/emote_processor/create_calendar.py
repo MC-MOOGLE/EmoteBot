@@ -34,14 +34,11 @@ def create_calendar(user_id, year: int | None = None, month: int | None = None, 
     img = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(img)
     
-    # Шрифты
     font = ImageFont.truetype("arial.ttf", 20)
     header_font = ImageFont.truetype("arial.ttf", 30)
-    
-    # Заголовок
     header = f"{calendar.month_name[month]} {year}"
-
     bbox = draw.textbbox((0, 0), header, font=header_font)
+
     w = bbox[2] - bbox[0]
     h = bbox[3] - bbox[1]
 
@@ -57,7 +54,6 @@ def create_calendar(user_id, year: int | None = None, month: int | None = None, 
         "fear": (128, 0, 128),
     }
 
-    # Обработка дней
     for week_num, week in enumerate(month_cal):
         for day_num, day in enumerate(week):
             if day == 0:
@@ -69,9 +65,8 @@ def create_calendar(user_id, year: int | None = None, month: int | None = None, 
             
             # Рамка дня
             draw.rectangle([x, y, x+cell_size, y+cell_size], outline="gray")
-            
-            # Добавляем записи
             entries = day_data.get(day, [])
+            
             if entries:
                 try:
                     entry = entries[0]

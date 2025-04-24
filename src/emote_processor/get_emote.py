@@ -57,10 +57,6 @@ def get_emotions(image_path: str, backend: str = 'opencv'):
             silent=True
         )
 
-        emotes = analysis[0].get('emotion')
-        # if emotes:
-        #     print(*(f"{key}: {int(value * 10) / 10}" for key, value in emotes.items()), sep=", ")
-
         if not analysis or not isinstance(analysis, list):
             raise ValueError("No face detected or unable to recognize emotion in the image.")
 
