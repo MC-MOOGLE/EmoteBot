@@ -10,7 +10,7 @@ from src.database.services import save_image, find_similar_images
 from src.database.models import User, Settings
 init_db()
 
-folders = ['celeb_images'] #['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+folders = ['actors'] # ['celeb_images'] #['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
 def create_test_users_and_save_images(n_users: int = 50, n_images_per_user: int = 50):
     for i in range(n_users):
@@ -74,4 +74,5 @@ def benchmark_similar_images(find_n: int = 1, total_images: int = -1):
     print(f"Total images: {total} / {success} succeed")
 
 if __name__ == "__main__":
-    benchmark_similar_images(100)
+    create_test_users_and_save_images(1, 100)
+    # benchmark_similar_images(100)
